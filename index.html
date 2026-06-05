@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Majestic Craftsmen · Stock Signals</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080C14;
+    --surface: #0E1420;
+    --surface2: #141B2A;
+    --border: rgba(255,255,255,0.07);
+    --border-bright: rgba(255,255,255,0.13);
+    --text: #E8EDF5;
+    --muted: #5A6A85;
+    --accent: #F0A500;
+    --green: #00D68F;
+    --green-dim: rgba(0,214,143,0.12);
+    --red: #FF4757;
+    --red-dim: rgba(255,71,87,0.12);
+    --yellow: #FFD32A;
+    --yellow-dim: rgba(255,211,42,0.10);
+    --blue: #4A9EFF;
+    --blue-dim: rgba(74,158,255,0.10);
+    --gray-dim: rgba(90,106,133,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 14px; -webkit-font-smoothing: antialiased; }
+  
+  /* HEADER */
+  .header { background: linear-gradient(160deg, #0E1623 0%, #0A1018 100%); border-bottom: 1px solid var(--border); padding: 16px; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); }
+  .header-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .logo { width: 34px; height: 34px; background: linear-gradient(135deg, var(--accent), #D4890A); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .brand-name { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: 0.3px; }
+  .brand-sub { font-size: 9px; font-family: 'JetBrains Mono', monospace; color: var(--accent); letter-spacing: 1.5px; }
+  .header-status { margin-left: auto; text-align: right; }
+  .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 4px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+  .status-text { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--muted); }
+
+  /* SUMMARY PILLS */
+  .summary-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .summary-pill { font-size: 9px; font-family: 'JetBrains Mono', monospace; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
+  .pill-sb { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,214,143,0.3); }
+  .pill-b  { background: rgba(0,214,143,0.07); color: #69E8BB; border: 1px solid rgba(0,214,143,0.2); }
+  .pill-w  { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(255,211,42,0.25); }
+  .pill-i  { background: var(--gray-dim); color: var(--muted); border: 1px solid rgba(90,106,133,0.25); }
+  .pill-s  { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,71,87,0.3); }
+  .pill-loading { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(74,158,255,0.3); }
+
+  /* CONTROLS */
+  .controls { padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .search-box { flex: 1; min-width: 130px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 12px; font-family: 'Space Grotesk', sans-serif; outline: none; }
+  .search-box:focus { border-color: var(--accent); }
+  .search-box::placeholder { color: var(--muted); }
+  .sort-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; color: var(--muted); font-size: 11px; font-family: 'JetBrains Mono', monospace; cursor: pointer; outline: none; }
+
+  /* FILTER TABS */
+  .filter-tabs { display: flex; gap: 5px; padding: 10px 16px 4px; flex-wrap: wrap; overflow-x: auto; }
+  .filter-tab { font-size: 10px; font-family: 'JetBrains Mono', monospace; padding: 5px 11px; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); white-space: nowrap; transition: all 0.15s; }
+  .filter-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(240,165,0,0.08); }
+  .filter-tab:hover:not(.active) { border-color: var(--border-bright); color: var(--text); }
+
+  /* STOCK LIST */
+  .stock-list { padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+
+  /* STOCK CARD */
+  .stock-card { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: var(--surface); transition: border-color 0.2s; }
+  .stock-card.sig-sb { border-color: rgba(0,214,143,0.25); }
+  .stock-card.sig-b  { border-color: rgba(0,214,143,0.15); }
+  .stock-card.sig-s  { border-color: rgba(255,71,87,0.25); }
+  .stock-card.sig-w  { border-color: rgba(255,211,42,0.18); }
+  .stock-card.loading { opacity: 0.7; }
+
+  .card-header { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .card-left { flex: 1; min-width: 0; }
+  .card-title-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 3px; }
+  .sym-badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: var(--muted); background: var(--surface2); padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+  .stock-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .card-meta { font-size: 10px; color: var(--muted); }
+  .card-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .price-block { text-align: right; }
+  .price-val { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text); }
+  .price-range { font-size: 9px; margin-top: 1px; }
+  .in-range { color: var(--green); }
+  .out-range { color: var(--muted); }
+
+  /* SIGNAL BADGE */
+  .sig-badge { border-radius: 8px; padding: 6px 9px; text-align: center; min-width: 78px; border: 1.5px solid transparent; }
+  .sig-badge .sig-label { font-size: 9px; font-weight: 800; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.3px; }
+  .sig-badge .sig-upside { font-size: 9px; margin-top: 2px; opacity: 0.75; }
+  .sb-badge { background: var(--green-dim); border-color: rgba(0,214,143,0.4); color: var(--green); }
+  .b-badge  { background: rgba(0,214,143,0.07); border-color: rgba(0,214,143,0.25); color: #69E8BB; }
+  .s-badge  { background: var(--red-dim); border-color: rgba(255,71,87,0.4); color: var(--red); }
+  .ss-badge { background: rgba(255,71,87,0.18); border-color: rgba(255,71,87,0.5); color: #FF2D3F; }
+  .w-badge  { background: var(--yellow-dim); border-color: rgba(255,211,42,0.3); color: var(--yellow); }
+  .i-badge  { background: var(--gray-dim); border-color: rgba(90,106,133,0.2); color: var(--muted); }
+  .ld-badge { background: var(--blue-dim); border-color: rgba(74,158,255,0.3); color: var(--blue); }
+
+  .chevron { color: var(--muted); font-size: 12px; margin-left: 2px; transition: transform 0.2s; align-self: center; flex-shrink: 0; }
+  .chevron.open { transform: rotate(180deg); }
+
+  /* EXPANDED DETAIL */
+  .card-detail { border-top: 1px solid var(--border); padding: 14px; display: none; }
+  .card-detail.open { display: block; }
+
+  /* TIMEFRAME INDICATORS */
+  .tf-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tf-block { flex: 1; min-width: 100px; background: var(--surface2); border-radius: 8px; padding: 9px 10px; border: 1px solid var(--border); }
+  .tf-label { font-size: 9px; font-family: 'JetBrains Mono', monospace; color: var(--muted); letter-spacing: 1px; margin-bottom: 5px; }
+  .tf-signal { font-size: 11px; font-weight: 700; font-family: 'JetBrains Mono', monospace; margin-bottom: 6px; }
+  .tf-metrics { display: flex; flex-direction: column; gap: 3px; }
+  .tf-metric { display: flex; justify-content: space-between; font-size: 9px; }
+  .tf-metric-label { color: var(--muted); }
+  .tf-metric-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+  /* PRICE LEVELS */
+  .levels-grid { background: var(--surface2); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; border: 1px solid var(--border); }
+  .levels-title { font-size: 9px; font-family: 'JetBrains Mono', monospace; color: var(--muted); letter-spacing: 1px; margin-bottom: 8px; }
+  .level-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .level-row:last-child { border-bottom: none; }
+  .level-name { font-size: 10px; color: var(--muted); }
+  .level-val { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; }
+  .level-bar-wrap { width: 100%; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; margin: 8px 0 4px; position: relative; }
+  .level-bar { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--green), var(--accent)); }
+  .level-dot { position: absolute; top: -3px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--bg); transform: translateX(-50%); }
+
+  /* DECISION BOX */
+  .decision-box { border-radius: 8px; padding: 10px 12px; border: 1px solid; margin-bottom: 10px; }
+  .decision-title { font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 700; margin-bottom: 4px; }
+  .decision-text { font-size: 10px; line-height: 1.55; color: var(--muted); }
+
+  /* CONFLICT BOX */
+  .conflict-box { background: rgba(255,71,87,0.08); border: 1px solid rgba(255,71,87,0.3); border-radius: 8px; padding: 9px 12px; margin-bottom: 10px; }
+  .conflict-title { font-size: 9px; font-family: 'JetBrains Mono', monospace; color: var(--red); font-weight: 700; margin-bottom: 3px; }
+  .conflict-text { font-size: 10px; color: rgba(255,71,87,0.8); line-height: 1.5; }
+
+  /* CHART LINK */
+  .chart-link { display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--blue-dim); border: 1px solid rgba(74,158,255,0.25); border-radius: 8px; padding: 9px; text-decoration: none; color: var(--blue); font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+
+  /* LOADING & ERROR */
+  .loading-overlay { text-align: center; padding: 40px 20px; color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .loading-bar { width: 60%; max-width: 260px; height: 3px; background: var(--surface2); border-radius: 2px; margin: 12px auto 0; overflow: hidden; }
+  .loading-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; animation: loadanim 1.5s ease-in-out infinite; }
+  @keyframes loadanim { 0%{width:0;margin-left:0} 50%{width:60%;margin-left:20%} 100%{width:0;margin-left:100%} }
+  .err-box { background: var(--red-dim); border: 1px solid rgba(255,71,87,0.3); border-radius: 8px; padding: 10px 12px; font-size: 11px; color: var(--red); font-family: 'JetBrains Mono', monospace; margin: 4px 0; }
+
+  /* LEGEND */
+  .legend { margin: 4px 16px 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .legend-title { font-size: 9px; color: var(--muted); font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; margin-bottom: 8px; }
+  .legend-row { display: flex; gap: 6px; margin-bottom: 5px; }
+  .legend-key { font-size: 9px; font-weight: 700; min-width: 90px; font-family: 'JetBrains Mono', monospace; }
+  .legend-val { font-size: 9px; color: var(--muted); line-height: 1.4; }
+  .disclaimer { font-size: 9px; color: rgba(90,106,133,0.6); font-family: 'JetBrains Mono', monospace; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
+
+  /* REFRESH BTN */
+  .refresh-btn { background: transparent; border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; color: var(--muted); font-size: 10px; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.15s; }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* MINI CANVAS */
+  canvas { border-radius: 4px; background: var(--surface2); }
+
+  /* RANGE IN/OUT indicator */
+  .range-flag { display: inline-block; font-size: 9px; font-family: 'JetBrains Mono', monospace; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+  .range-in  { background: var(--green-dim); color: var(--green); }
+  .range-out { background: var(--gray-dim); color: var(--muted); }
+  .range-above { background: var(--red-dim); color: var(--red); }
+  .range-below { background: var(--yellow-dim); color: var(--yellow); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">⌚</div>
+    <div>
+      <div class="brand-name">Majestic Craftsmen</div>
+      <div class="brand-sub">STOCK SIGNAL ANALYZER</div>
+    </div>
+    <div class="header-status" style="margin-left:auto">
+      <div><span class="status-dot" id="statusDot"></span><span class="status-text" id="statusText">LOADING...</span></div>
+      <div class="status-text" id="lastUpdated" style="margin-top:2px"></div>
+    </div>
+  </div>
+  <div class="summary-row" id="summaryRow">
+    <span class="summary-pill pill-loading">Fetching live data...</span>
+  </div>
+</div>
+
+<div class="controls">
+  <input class="search-box" type="text" id="searchBox" placeholder="Search stock or sector…">
+  <select class="sort-select" id="sortSelect">
+    <option value="signal">Sort: Signal</option>
+    <option value="upside">Sort: Upside %</option>
+    <option value="alloc">Sort: Allocation</option>
+    <option value="conflict">Sort: Conflicts First</option>
+  </select>
+  <button class="refresh-btn" onclick="startFetch()">↻ Refresh</button>
+</div>
+<div class="filter-tabs" id="filterTabs"></div>
+
+<div id="stockList" class="stock-list">
+  <div class="loading-overlay">
+    <div>Fetching live NSE data for 26 stocks…</div>
+    <div style="font-size:10px;margin-top:6px;color:var(--muted)">Computing MACD · RSI · Volume across Daily / Weekly / Yearly</div>
+    <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+    <div id="fetchProgress" style="font-size:10px;color:var(--muted);margin-top:8px"></div>
+  </div>
+</div>
+
+<div class="legend" id="legendBox" style="display:none">
+  <div class="legend-title">YOUR SIGNAL RULES</div>
+  <div class="legend-row"><div class="legend-key" style="color:var(--green)">🔥 STRONG BUY</div><div class="legend-val">MACD bullish crossover + RSI crossing 30 upward + High green volume (institutional block). All 3 timeframes aligned.</div></div>
+  <div class="legend-row"><div class="legend-key" style="color:#69E8BB">✅ BUY</div><div class="legend-val">MACD crossover + RSI 40–50 + Above-avg green volume. Daily + Weekly aligned.</div></div>
+  <div class="legend-row"><div class="legend-key" style="color:var(--yellow)">⚠ WATCH</div><div class="legend-val">Setup forming but not all conditions met. Monitor closely.</div></div>
+  <div class="legend-row"><div class="legend-key" style="color:var(--red)">❌ SELL / AVOID</div><div class="legend-val">MACD bearish + RSI >72 overbought + Red volume blocks. Exit or avoid.</div></div>
+  <div class="legend-row"><div class="legend-key" style="color:var(--muted)">⏭ IGNORE</div><div class="legend-val">Signal only on Daily OR only Yearly — not confirmed. Wait.</div></div>
+  <div class="legend-row"><div class="legend-key" style="color:var(--red)">⚡ CONFLICT</div><div class="legend-val">Broker says BUY but technicals say SELL, or price outside broker range. High caution.</div></div>
+  <div class="disclaimer">⚠ Real NSE data via Yahoo Finance. MACD(12,26,9) · RSI(14) · Volume vs 20-day avg. Always verify before executing trades. Not financial advice.</div>
+</div>
+
+<script>
+const STOCKS = [
+  { name:"Nykaa (FSN E-Commerce)", symbol:"NYKAA.NS", display:"NYKAA", sector:"e-Commerce", alloc:3.0, buyLow:240, buyHigh:270, revLow:310, revHigh:323, shares:67, brokerUpside:21 },
+  { name:"Reliance Industries", symbol:"RELIANCE.NS", display:"RELIANCE", sector:"Refineries", alloc:4.0, buyLow:1250, buyHigh:1400, revLow:1559, revHigh:1635, shares:18, brokerUpside:25 },
+  { name:"Bajaj Auto", symbol:"BAJAJ-AUTO.NS", display:"BAJAJ-AUTO", sector:"Automobile", alloc:3.5, buyLow:9250, buyHigh:10500, revLow:11888, revHigh:12708, shares:2, brokerUpside:23 },
+  { name:"Emcure Pharmaceuticals", symbol:"EMCURE.NS", display:"EMCURE", sector:"Pharma", alloc:3.0, buyLow:1600, buyHigh:1850, revLow:1918, revHigh:2071, shares:10, brokerUpside:19 },
+  { name:"Adani Ports & SEZ", symbol:"ADANIPORTS.NS", display:"ADANIPORTS", sector:"Port", alloc:3.0, buyLow:1550, buyHigh:1750, revLow:1904, revHigh:2044, shares:10, brokerUpside:14 },
+  { name:"Larsen & Toubro", symbol:"LT.NS", display:"LT", sector:"Engineering", alloc:4.5, buyLow:3500, buyHigh:4200, revLow:4489, revHigh:4863, shares:6, brokerUpside:23 },
+  { name:"Fiem Industries", symbol:"FIEMIND.NS", display:"FIEMIND", sector:"Auto Ancillary", alloc:3.0, buyLow:2000, buyHigh:2400, revLow:2639, revHigh:2771, shares:7, brokerUpside:19 },
+  { name:"Marico", symbol:"MARICO.NS", display:"MARICO", sector:"Consumer FMCG", alloc:3.5, buyLow:750, buyHigh:850, revLow:968, revHigh:1005, shares:25, brokerUpside:23 },
+  { name:"Travel Food Services", symbol:"TRAVELFOOD.NS", display:"TRAVELFOOD", sector:"Restaurants", alloc:3.5, buyLow:1150, buyHigh:1350, revLow:1565, revHigh:1640, shares:16, brokerUpside:28 },
+  { name:"Axis Bank", symbol:"AXISBANK.NS", display:"AXISBANK", sector:"Bank - Private", alloc:4.5, buyLow:1200, buyHigh:1400, revLow:1568, revHigh:1655, shares:21, brokerUpside:32 },
+  { name:"Shriram Finance", symbol:"SHRIRAMFIN.NS", display:"SHRIRAMFIN", sector:"Finance NBFC", alloc:4.0, buyLow:850, buyHigh:1025, revLow:1152, revHigh:1207, shares:26, brokerUpside:32 },
+  { name:"NMDC", symbol:"NMDC.NS", display:"NMDC", sector:"Mining", alloc:3.0, buyLow:85, buyHigh:100, revLow:105, revHigh:115, shares:190, brokerUpside:21 },
+  { name:"Karur Vysya Bank", symbol:"KARURVYSYA.NS", display:"KARURVYSYA", sector:"Bank - Private", alloc:3.0, buyLow:270, buyHigh:310, revLow:340, revHigh:359, shares:63, brokerUpside:26 },
+  { name:"Lupin", symbol:"LUPIN.NS", display:"LUPIN", sector:"Pharma", alloc:3.5, buyLow:2100, buyHigh:2400, revLow:2627, revHigh:2829, shares:9, brokerUpside:26 },
+  { name:"APL Apollo Tubes", symbol:"APLAPOLLO.NS", display:"APLAPOLLO", sector:"Steel", alloc:3.5, buyLow:1700, buyHigh:2050, revLow:3443, revHigh:3646, shares:11, brokerUpside:102 },
+  { name:"Bharat Electronics (BEL)", symbol:"BEL.NS", display:"BEL", sector:"Defence", alloc:3.5, buyLow:350, buyHigh:470, revLow:686, revHigh:762, shares:51, brokerUpside:86 },
+  { name:"Tata Consumer Products", symbol:"TATACONSUM.NS", display:"TATACONSUM", sector:"Tea/Coffee", alloc:3.5, buyLow:1100, buyHigh:1250, revLow:1797, revHigh:1859, shares:18, brokerUpside:62 },
+  { name:"Radico Khaitan", symbol:"RADICO.NS", display:"RADICO", sector:"Breweries", alloc:3.0, buyLow:3100, buyHigh:3500, revLow:5171, revHigh:5453, shares:5, brokerUpside:56 },
+  { name:"State Bank of India", symbol:"SBIN.NS", display:"SBIN", sector:"Bank - Public", alloc:5.0, buyLow:825, buyHigh:1050, revLow:1484, revHigh:1564, shares:30, brokerUpside:60 },
+  { name:"Bajaj Finance", symbol:"BAJFINANCE.NS", display:"BAJFINANCE", sector:"Finance NBFC", alloc:3.5, buyLow:850, buyHigh:1000, revLow:1614, revHigh:1691, shares:24, brokerUpside:93 },
+  { name:"ICICI Bank", symbol:"ICICIBANK.NS", display:"ICICIBANK", sector:"Bank - Private", alloc:3.5, buyLow:1150, buyHigh:1350, revLow:1651, revHigh:1721, shares:16, brokerUpside:37 },
+  { name:"HDFC Asset Management", symbol:"HDFCAMC.NS", display:"HDFCAMC", sector:"Asset Management", alloc:3.0, buyLow:2600, buyHigh:3000, revLow:3286, revHigh:3459, shares:7, brokerUpside:37 },
+  { name:"Bank of Baroda", symbol:"BANKBARODA.NS", display:"BANKBARODA", sector:"Bank - Public", alloc:3.0, buyLow:250, buyHigh:300, revLow:328, revHigh:346, shares:66, brokerUpside:28 },
+  { name:"Coal India", symbol:"COALINDIA.NS", display:"COALINDIA", sector:"Mining", alloc:4.0, buyLow:440, buyHigh:510, revLow:548, revHigh:591, shares:49, brokerUpside:23 },
+  { name:"Ultratech Cement", symbol:"ULTRACEMCO.NS", display:"ULTRACEMCO", sector:"Cement", alloc:3.5, buyLow:10750, buyHigh:12500, revLow:14155, revHigh:14506, shares:1, brokerUpside:32 },
+  { name:"JSW Steel", symbol:"JSWSTEEL.NS", display:"JSWSTEEL", sector:"Steel", alloc:3.5, buyLow:1150, buyHigh:1350, revLow:1492, revHigh:1577, shares:16, brokerUpside:21 },
+];
+
+// Multiple proxies tried in order — if one fails, next is tried
+const PROXIES = [
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  url => `https://thingproxy.freeboard.io/fetch/${url}`,
+];
+const YF_HOSTS = ["https://query1.finance.yahoo.com", "https://query2.finance.yahoo.com"];
+const YF_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "Accept": "application/json, text/plain, */*",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Referer": "https://finance.yahoo.com",
+  "Origin": "https://finance.yahoo.com",
+};
+
+let stockData = {};
+let activeFilter = "ALL";
+let expandedSymbol = null;
+
+// ─── INDICATOR MATH ───────────────────────────────────────────────
+
+function calcEMA(data, period) {
+  if (data.length < period) return [];
+  const k = 2 / (period + 1);
+  let ema = [data.slice(0, period).reduce((a, b) => a + b, 0) / period];
+  for (let i = period; i < data.length; i++) {
+    ema.push(data[i] * k + ema[ema.length - 1] * (1 - k));
+  }
+  return ema;
+}
+
+function calcMACD(closes) {
+  if (closes.length < 35) return null;
+  const ema12 = calcEMA(closes, 12);
+  const ema26 = calcEMA(closes, 26);
+  const offset = ema12.length - ema26.length;
+  const macdLine = ema26.map((v, i) => ema12[i + offset] - v);
+  const signal = calcEMA(macdLine, 9);
+  const sigOffset = macdLine.length - signal.length;
+  const histogram = signal.map((v, i) => macdLine[i + sigOffset] - v);
+  const last = histogram.length - 1;
+  return {
+    macdLine: macdLine[macdLine.length - 1],
+    signalLine: signal[last],
+    histogram: histogram[last],
+    prevHistogram: histogram[last - 1],
+    crossover: histogram[last] > 0 && histogram[last - 1] <= 0,  // fresh bull cross
+    crossunder: histogram[last] < 0 && histogram[last - 1] >= 0, // fresh bear cross
+    bullish: histogram[last] > 0,
+    histGrowing: histogram[last] > histogram[last - 1],
+  };
+}
+
+function calcRSI(closes, period = 14) {
+  if (closes.length < period + 1) return null;
+  let gains = 0, losses = 0;
+  for (let i = 1; i <= period; i++) {
+    const diff = closes[i] - closes[i - 1];
+    if (diff > 0) gains += diff; else losses -= diff;
+  }
+  let avgGain = gains / period, avgLoss = losses / period;
+  for (let i = period + 1; i < closes.length; i++) {
+    const diff = closes[i] - closes[i - 1];
+    const g = diff > 0 ? diff : 0, l = diff < 0 ? -diff : 0;
+    avgGain = (avgGain * (period - 1) + g) / period;
+    avgLoss = (avgLoss * (period - 1) + l) / period;
+  }
+  const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+  const rsi = 100 - 100 / (1 + rs);
+  // also return prev RSI for crossover detection
+  const closes2 = closes.slice(0, -1);
+  let ag2 = 0, al2 = 0;
+  for (let i = 1; i <= period; i++) {
+    const d = closes2[i] - closes2[i - 1];
+    if (d > 0) ag2 += d; else al2 -= d;
+  }
+  ag2 /= period; al2 /= period;
+  for (let i = period + 1; i < closes2.length; i++) {
+    const d = closes2[i] - closes2[i - 1];
+    ag2 = (ag2 * (period - 1) + Math.max(d, 0)) / period;
+    al2 = (al2 * (period - 1) + Math.max(-d, 0)) / period;
+  }
+  const prevRsi = 100 - 100 / (1 + (al2 === 0 ? 100 : ag2 / al2));
+  return { value: Math.round(rsi * 10) / 10, prev: Math.round(prevRsi * 10) / 10, risingFrom30: prevRsi < 30 && rsi >= 30, crossedFrom30: rsi > 30 && rsi < 45, mid: rsi >= 40 && rsi <= 55, overbought: rsi > 72 };
+}
+
+function calcVolume(volumes) {
+  if (volumes.length < 21) return null;
+  const recent = volumes[volumes.length - 1];
+  const avg20 = volumes.slice(-21, -1).reduce((a, b) => a + b, 0) / 20;
+  const multiplier = Math.round((recent / avg20) * 100) / 100;
+  // recent vs previous candle
+  return { recent, avg20: Math.round(avg20), multiplier, isHigh: multiplier > 1.5, isVeryHigh: multiplier > 2.0 };
+}
+
+// Determine signal for a timeframe
+function getTimeframeSignal(closes, volumes) {
+  const macd = calcMACD(closes);
+  const rsi = calcRSI(closes);
+  const vol = calcVolume(volumes);
+  if (!macd || !rsi || !vol) return { signal: "NO DATA", score: -1, macd: null, rsi: null, vol: null };
+
+  // Price direction from last close
+  const priceUp = closes[closes.length - 1] > closes[closes.length - 2];
+
+  // STRONG BUY: MACD crossover (or bullish+growing) + RSI just came from <30 or is in 30-45 + high green vol
+  const strongBuy = (macd.crossover || (macd.bullish && macd.histGrowing)) 
+    && (rsi.risingFrom30 || rsi.crossedFrom30) 
+    && vol.isHigh && priceUp;
+  
+  // BUY: MACD bullish + RSI in 40-55 zone + decent vol
+  const buy = macd.bullish 
+    && rsi.mid 
+    && vol.multiplier > 1.0 && priceUp;
+
+  // SELL: MACD turning bearish (crossunder or falling) + RSI overbought + high red vol
+  const sell = (macd.crossunder || (!macd.bullish && !macd.histGrowing)) 
+    && rsi.overbought 
+    && vol.isHigh && !priceUp;
+
+  // WATCH: MACD bullish but RSI not in ideal zone yet
+  const watch = macd.bullish && !rsi.overbought && !strongBuy && !buy;
+
+  let signal, score;
+  if (strongBuy) { signal = "STRONG BUY"; score = 4; }
+  else if (buy)  { signal = "BUY";        score = 3; }
+  else if (sell) { signal = "SELL";       score = 0; }
+  else if (watch){ signal = "WATCH";      score = 2; }
+  else           { signal = "NEUTRAL";    score = 1; }
+
+  return { signal, score, macd, rsi, vol };
+}
+
+// Composite signal from your rules
+function getComposite(daily, weekly, yearly) {
+  const ds = daily.score, ws = weekly.score, ys = yearly.score;
+  if (ds < 0 || ws < 0) return { label: "NO DATA", tier: "ND", cls: "ld-badge" };
+  
+  const dBuy = ds >= 3, wBuy = ws >= 3, yBuy = ys >= 3;
+  const dSell = ds === 0, wSell = ws === 0;
+
+  // Sell signals
+  if (dSell && wSell) return { label: "STRONG SELL", tier: "SS", cls: "ss-badge" };
+  if (dSell || wSell) return { label: "SELL", tier: "S", cls: "s-badge" };
+
+  // Your rules: all 3 → STRONG BUY
+  if (dBuy && wBuy && yBuy) return { label: "STRONG BUY", tier: "SB", cls: "sb-badge" };
+  // Daily + weekly → BUY
+  if (dBuy && wBuy) return { label: "BUY", tier: "B", cls: "b-badge" };
+  // Only daily or only yearly → IGNORE
+  if ((dBuy && !wBuy) || (yBuy && !dBuy)) return { label: "IGNORE", tier: "I", cls: "i-badge" };
+  // Watch/neutral
+  if (ds >= 2 && ws >= 2) return { label: "WATCH", tier: "W", cls: "w-badge" };
+  return { label: "NEUTRAL", tier: "N", cls: "i-badge" };
+}
+
+// Price range status
+function rangeStatus(price, buyLow, buyHigh) {
+  if (price >= buyLow && price <= buyHigh) return { label: "IN RANGE", cls: "range-in", detail: "Price is within broker's buy range" };
+  if (price < buyLow) return { label: "BELOW RANGE", cls: "range-below", detail: `₹${(buyLow - price).toLocaleString('en-IN')} below buy range entry` };
+  return { label: "ABOVE RANGE", cls: "range-above", detail: `₹${(price - buyHigh).toLocaleString('en-IN')} above broker's buy ceiling` };
+}
+
+// Detect broker vs technical conflict
+function detectConflict(composite, range, price, buyLow, buyHigh) {
+  const conflicts = [];
+  const brokerBuy = true; // Broker has these all as buy list
+  const techSell = composite.tier === "S" || composite.tier === "SS";
+  const techBuy = composite.tier === "SB" || composite.tier === "B";
+  
+  if (brokerBuy && techSell) conflicts.push("⚡ Broker says BUY but technicals say SELL — high conflict, do not enter");
+  if (techBuy && range.cls === "range-above") conflicts.push(`📍 Strong technical BUY but price ₹${price.toLocaleString('en-IN')} is above broker's ceiling of ₹${buyHigh.toLocaleString('en-IN')} — entry is late`);
+  if (composite.tier === "I") conflicts.push("⏭ Signal only on one timeframe — your rule says IGNORE this");
+  return conflicts;
+}
+
+// ─── FETCH ────────────────────────────────────────────────────────
+
+function parseYFResponse(text) {
+  let data;
+  try { data = JSON.parse(text); } catch(e) { throw new Error("Invalid JSON from proxy"); }
+  // allorigins wraps in {contents:...}
+  if (data.contents) { try { data = JSON.parse(data.contents); } catch(e) { throw new Error("Invalid inner JSON"); } }
+  if (!data.chart || !data.chart.result || !data.chart.result[0]) throw new Error("No chart data");
+  const result = data.chart.result[0];
+  const quotes = result.indicators.quote[0];
+  // Filter out nulls — fill forward
+  const raw_closes = quotes.close || [];
+  const raw_volumes = quotes.volume || [];
+  let lastClose = 0, lastVol = 0;
+  const closes = raw_closes.map(v => { if (v != null && v > 0) lastClose = v; return lastClose; });
+  const volumes = raw_volumes.map(v => { if (v != null && v > 0) lastVol = v; return lastVol; });
+  return {
+    closes,
+    volumes,
+    timestamps: result.timestamp || [],
+    currentPrice: result.meta.regularMarketPrice || result.meta.previousClose || closes[closes.length-1],
+  };
+}
+
+async function fetchYF(symbol, interval, range) {
+  const lastErrors = [];
+  // Try each proxy × each Yahoo host
+  for (const host of YF_HOSTS) {
+    const yfUrl = `${host}/v8/finance/chart/${symbol}?interval=${interval}&range=${range}&includePrePost=false&corsDomain=finance.yahoo.com`;
+    for (const makeProxy of PROXIES) {
+      const proxyUrl = makeProxy(yfUrl);
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000);
+        const resp = await fetch(proxyUrl, {
+          headers: YF_HEADERS,
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        if (!resp.ok) { lastErrors.push(`${proxyUrl.slice(0,40)}: HTTP ${resp.status}`); continue; }
+        const text = await resp.text();
+        if (!text || text.length < 100) { lastErrors.push(`Empty response`); continue; }
+        return parseYFResponse(text);
+      } catch(e) {
+        lastErrors.push(`${e.name}: ${e.message.slice(0,60)}`);
+        continue;
+      }
+    }
+  }
+  throw new Error(`All proxies failed. Last: ${lastErrors.slice(-2).join(" | ")}`);
+}
+
+async function analyzeStock(stock) {
+  try {
+    // Sequential fetches to avoid rate limiting across proxies
+    const daily  = await fetchYF(stock.symbol, "1d",  "6mo");
+    await new Promise(r => setTimeout(r, 300)); // small delay between calls
+    const weekly = await fetchYF(stock.symbol, "1wk", "2y");
+    await new Promise(r => setTimeout(r, 300));
+    const yearly = await fetchYF(stock.symbol, "1mo", "5y");
+
+    const dailySig  = getTimeframeSignal(daily.closes,  daily.volumes);
+    const weeklySig = getTimeframeSignal(weekly.closes, weekly.volumes);
+    const yearlySig = getTimeframeSignal(yearly.closes, yearly.volumes);
+    const composite = getComposite(dailySig, weeklySig, yearlySig);
+    const price = daily.currentPrice;
+    const range = rangeStatus(price, stock.buyLow, stock.buyHigh);
+    const conflicts = detectConflict(composite, range, price, stock.buyLow, stock.buyHigh);
+
+    return { ...stock, price, daily: dailySig, weekly: weeklySig, yearly: yearlySig, composite, range, conflicts, error: null };
+  } catch (e) {
+    return { ...stock, price: null, error: e.message, composite: { label: "ERROR", tier: "ND", cls: "ld-badge" }, conflicts: [] };
+  }
+}
+
+async function startFetch() {
+  document.getElementById("stockList").innerHTML = `
+    <div class="loading-overlay">
+      <div>Fetching live NSE data for 26 stocks…</div>
+      <div style="font-size:10px;margin-top:6px;color:var(--muted)">Trying data proxies · Computing MACD(12,26,9) · RSI(14) · Volume</div>
+      <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+      <div id="fetchProgress" style="font-size:10px;color:var(--muted);margin-top:8px">Starting…</div>
+      <div id="fetchSubtext" style="font-size:9px;color:var(--muted);margin-top:4px;font-family:JetBrains Mono,monospace"></div>
+    </div>`;
+  document.getElementById("legendBox").style.display = "none";
+  document.getElementById("summaryRow").innerHTML = `<span class="summary-pill pill-loading">Fetching live data...</span>`;
+  document.getElementById("statusText").textContent = "LOADING...";
+  document.getElementById("statusDot").style.background = "var(--yellow)";
+
+  stockData = {};
+  const results = [];
+  let done = 0, errors = 0;
+
+  for (const stock of STOCKS) {
+    const prog = document.getElementById("fetchProgress");
+    const sub = document.getElementById("fetchSubtext");
+    if (prog) prog.textContent = `${stock.display} (${done+1}/${STOCKS.length}) · ${errors} errors so far`;
+    if (sub) sub.textContent = `Fetching Daily → Weekly → Monthly…`;
+    const result = await analyzeStock(stock);
+    if (result.error) errors++;
+    results.push(result);
+    stockData[stock.display] = result;
+    done++;
+    // Re-render progressively as each stock loads
+    if (done % 5 === 0 || done === STOCKS.length) {
+      buildSummary(results);
+      buildFilters(results);
+      // Only render list on final pass to avoid flicker
+      if (done === STOCKS.length) renderList(results);
+    }
+  }
+
+  const now = new Date();
+  const allOk = errors === 0;
+  document.getElementById("statusText").textContent = allOk ? "LIVE" : `LIVE (${errors} errors)`;
+  document.getElementById("statusDot").style.background = allOk ? "var(--green)" : "var(--yellow)";
+  document.getElementById("lastUpdated").textContent = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById("legendBox").style.display = "block";
+
+  buildSummary(results);
+  buildFilters(results);
+  renderList(results);
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────
+
+const sigOrder = { "STRONG BUY": 0, "BUY": 1, "WATCH": 2, "NEUTRAL": 3, "IGNORE": 4, "SELL": 5, "STRONG SELL": 6, "ERROR": 7, "NO DATA": 8 };
+const sigCls = { "STRONG BUY": "sb", "BUY": "b", "WATCH": "w", "NEUTRAL": "i", "IGNORE": "i", "SELL": "s", "STRONG SELL": "s", "ERROR": "ld", "NO DATA": "ld" };
+
+function buildSummary(results) {
+  const counts = {};
+  results.forEach(r => { counts[r.composite.label] = (counts[r.composite.label] || 0) + 1; });
+  const order = ["STRONG BUY", "BUY", "WATCH", "IGNORE", "SELL", "STRONG SELL"];
+  const pillCls = { "STRONG BUY": "pill-sb", "BUY": "pill-b", "WATCH": "pill-w", "IGNORE": "pill-i", "SELL": "pill-s", "STRONG SELL": "pill-s" };
+  const conflicts = results.filter(r => r.conflicts && r.conflicts.length > 0).length;
+  let html = order.filter(k => counts[k]).map(k => `<span class="summary-pill ${pillCls[k]||'pill-i'}">${k}: ${counts[k]}</span>`).join("");
+  if (conflicts) html += `<span class="summary-pill pill-s">⚡ CONFLICTS: ${conflicts}</span>`;
+  document.getElementById("summaryRow").innerHTML = html;
+}
+
+function buildFilters(results) {
+  const labels = ["ALL", "STRONG BUY", "BUY", "WATCH", "IGNORE", "SELL", "⚡ CONFLICT"];
+  const counts = { ALL: results.length };
+  results.forEach(r => { counts[r.composite.label] = (counts[r.composite.label] || 0) + 1; });
+  counts["⚡ CONFLICT"] = results.filter(r => r.conflicts && r.conflicts.length > 0).length;
+  const html = labels.filter(l => l === "ALL" || counts[l]).map(l =>
+    `<button class="filter-tab${l===activeFilter?' active':''}" onclick="setFilter('${l}')">${l} ${counts[l]||0}</button>`
+  ).join("");
+  document.getElementById("filterTabs").innerHTML = html;
+}
+
+function setFilter(f) {
+  activeFilter = f;
+  const allResults = Object.values(stockData);
+  buildFilters(allResults);
+  renderList(allResults);
+}
+
+function renderList(allResults) {
+  const search = document.getElementById("searchBox").value.toLowerCase();
+  const sort = document.getElementById("sortSelect").value;
+
+  let filtered = allResults.filter(r => {
+    const matchSearch = !search || r.name.toLowerCase().includes(search) || r.display.toLowerCase().includes(search) || r.sector.toLowerCase().includes(search);
+    const matchFilter = activeFilter === "ALL" || r.composite.label === activeFilter || (activeFilter === "⚡ CONFLICT" && r.conflicts && r.conflicts.length > 0);
+    return matchSearch && matchFilter;
+  });
+
+  filtered.sort((a, b) => {
+    if (sort === "signal") return (sigOrder[a.composite.label]||5) - (sigOrder[b.composite.label]||5);
+    if (sort === "upside") return b.brokerUpside - a.brokerUpside;
+    if (sort === "alloc") return b.alloc - a.alloc;
+    if (sort === "conflict") return (b.conflicts.length - a.conflicts.length) || (sigOrder[a.composite.label]||5) - (sigOrder[b.composite.label]||5);
+    return 0;
+  });
+
+  if (!filtered.length) {
+    document.getElementById("stockList").innerHTML = `<div class="loading-overlay" style="padding:30px">No stocks match filters</div>`;
+    return;
+  }
+  document.getElementById("stockList").innerHTML = filtered.map(r => renderCard(r)).join("");
+}
+
+function sigColor(sig) {
+  if (sig === "STRONG BUY") return "var(--green)";
+  if (sig === "BUY") return "#69E8BB";
+  if (sig === "SELL" || sig === "STRONG SELL") return "var(--red)";
+  if (sig === "WATCH") return "var(--yellow)";
+  return "var(--muted)";
+}
+
+function rsiColor(val) {
+  if (!val) return "var(--muted)";
+  if (val < 35) return "var(--green)";
+  if (val > 72) return "var(--red)";
+  if (val >= 40 && val <= 55) return "#69E8BB";
+  return "var(--muted)";
+}
+
+function renderTF(tf, label) {
+  if (!tf || tf.score < 0) return `<div class="tf-block"><div class="tf-label">${label}</div><div class="tf-signal" style="color:var(--muted)">NO DATA</div></div>`;
+  const c = sigColor(tf.signal);
+  const rsi = tf.rsi ? tf.rsi.value : "—";
+  const macdDir = tf.macd ? (tf.macd.bullish ? "▲ BULL" : "▼ BEAR") : "—";
+  const volX = tf.vol ? `${tf.vol.multiplier}x` : "—";
+  const volCol = tf.vol ? (tf.vol.isVeryHigh ? "var(--green)" : tf.vol.isHigh ? "#69E8BB" : "var(--muted)") : "var(--muted)";
+  return `<div class="tf-block">
+    <div class="tf-label">${label}</div>
+    <div class="tf-signal" style="color:${c}">${tf.signal}</div>
+    <div class="tf-metrics">
+      <div class="tf-metric"><span class="tf-metric-label">RSI</span><span class="tf-metric-val" style="color:${rsiColor(tf.rsi?.value)}">${rsi}</span></div>
+      <div class="tf-metric"><span class="tf-metric-label">MACD</span><span class="tf-metric-val" style="color:${tf.macd?.bullish?'var(--green)':'var(--red)'}">${macdDir}</span></div>
+      <div class="tf-metric"><span class="tf-metric-label">VOL</span><span class="tf-metric-val" style="color:${volCol}">${volX}</span></div>
+      ${tf.macd?.crossover ? `<div class="tf-metric" style="margin-top:2px"><span style="font-size:8px;color:var(--green);font-family:'JetBrains Mono',monospace">⚡ FRESH CROSSOVER</span></div>` : ""}
+      ${tf.rsi?.risingFrom30 ? `<div class="tf-metric"><span style="font-size:8px;color:var(--green);font-family:'JetBrains Mono',monospace">↑ RSI FROM 30</span></div>` : ""}
+    </div>
+  </div>`;
+}
+
+function renderCard(r) {
+  const sig = r.composite;
+  const cardCls = `sig-${sigCls[sig.label]||"i"}`;
+  const isExpanded = expandedSymbol === r.display;
+  const priceStr = r.price ? `₹${r.price.toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2})}` : "—";
+  const rangeLabel = r.range ? `<span class="range-flag ${r.range.cls}">${r.range.label}</span>` : "";
+  const conflictDot = r.conflicts && r.conflicts.length ? ` <span style="color:var(--red);font-size:10px">⚡</span>` : "";
+  const chartUrl = `https://finance.yahoo.com/chart/${r.symbol}`;
+
+  let detail = "";
+  if (isExpanded) {
+    const decisionText = {
+      SB: "All 3 timeframes (Daily + Weekly + Yearly) aligned bullish. MACD crossover confirmed, RSI in recovery zone, institutional volume detected. Highest conviction — enter within broker's buy range.",
+      B:  "Daily and Weekly both show bullish setup. Your rule confirms this as a BUY. Check that current price is within broker's buy range before entering.",
+      W:  "Setup is forming but not all conditions met across timeframes. Watch closely — do not enter yet.",
+      I:  "Per your rules: signal is only on one timeframe. IGNORE this setup and wait for Weekly to confirm.",
+      S:  "Bearish technical setup. MACD turning down, RSI elevated/overbought, and selling volume. Avoid entering. If holding, consider exit.",
+      SS: "Strong sell signals on both Daily and Weekly. High conviction exit signal.",
+      N:  "Mixed signals, no clear setup. Stay on the sidelines.",
+      ND: "Data could not be fetched. Check internet connection or try refreshing.",
+    }[sig.tier] || "";
+
+    const decisionColor = ["SB","B"].includes(sig.tier) ? "rgba(0,214,143,0.15)" : ["S","SS"].includes(sig.tier) ? "rgba(255,71,87,0.1)" : "rgba(90,106,133,0.08)";
+    const decisionBorder = ["SB","B"].includes(sig.tier) ? "rgba(0,214,143,0.3)" : ["S","SS"].includes(sig.tier) ? "rgba(255,71,87,0.3)" : "rgba(90,106,133,0.15)";
+    const decisionTitleColor = sigColor(sig.label);
+
+    const conflictsHtml = r.conflicts && r.conflicts.length ? r.conflicts.map(c => `
+      <div class="conflict-box"><div class="conflict-title">⚡ CONFLICT DETECTED</div><div class="conflict-text">${c}</div></div>`).join("") : "";
+
+    // Price bar
+    const lo = r.buyLow, hi = r.revHigh, price = r.price || lo;
+    const pct = Math.min(Math.max((price - lo) / (hi - lo) * 100, 0), 100);
+    const buyPct = (r.buyHigh - lo) / (hi - lo) * 100;
+
+    detail = `
+    <div class="card-detail open" onclick="event.stopPropagation()">
+      <div class="tf-row">
+        ${renderTF(r.daily, "DAILY")}
+        ${renderTF(r.weekly, "WEEKLY")}
+        ${renderTF(r.yearly, "MONTHLY")}
+      </div>
+      ${conflictsHtml}
+      <div class="decision-box" style="background:${decisionColor};border-color:${decisionBorder}">
+        <div class="decision-title" style="color:${decisionTitleColor}">COMPOSITE DECISION: ${sig.label}</div>
+        <div class="decision-text">${decisionText}</div>
+      </div>
+      <div class="levels-grid">
+        <div class="levels-title">PRICE LEVELS</div>
+        ${[
+          ["Review High", r.revHigh, "var(--yellow)"],
+          ["Review Low",  r.revLow,  "rgba(255,211,42,0.6)"],
+          ["Current",     r.price,   "var(--blue)"],
+          ["Buy High",    r.buyHigh, "rgba(0,214,143,0.7)"],
+          ["Buy Low",     r.buyLow,  "var(--green)"],
+        ].map(([label, val, color]) => val ? `
+          <div class="level-row">
+            <span class="level-name">${label}</span>
+            <span class="level-val" style="color:${color}">₹${val.toLocaleString('en-IN')}</span>
+          </div>` : "").join("")}
+        <div class="level-bar-wrap">
+          <div class="level-bar" style="width:${buyPct}%;background:rgba(0,214,143,0.3)"></div>
+          <div class="level-dot" style="left:${pct}%;background:var(--blue)"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">
+          <span>₹${r.buyLow.toLocaleString('en-IN')}</span>
+          <span style="color:var(--blue)">current</span>
+          <span>₹${r.revHigh.toLocaleString('en-IN')}</span>
+        </div>
+        ${r.range ? `<div style="margin-top:8px;font-size:10px;color:var(--muted)">${r.range.detail}</div>` : ""}
+      </div>
+      ${r.error ? `<div class="err-box">⚠ ${r.error.length > 120 ? r.error.slice(0,120)+'…' : r.error}</div>` : ""}
+      <a class="chart-link" href="${chartUrl}" target="_blank">📊 Open ${r.display} on Yahoo Finance Chart →</a>
+    </div>`;
+  }
+
+  return `<div class="stock-card ${cardCls}" id="card-${r.display}" onclick="toggleCard('${r.display}')">
+    <div class="card-header">
+      <div class="card-left">
+        <div class="card-title-row">
+          <span class="sym-badge">${r.display}</span>
+          <span class="stock-name">${r.name}${conflictDot}</span>
+        </div>
+        <div class="card-meta">${r.sector} · ${r.alloc}% alloc · ~${r.shares} shares</div>
+      </div>
+      <div class="card-right">
+        <div class="price-block">
+          <div class="price-val">${priceStr}</div>
+          <div class="price-range">${rangeLabel}</div>
+        </div>
+        <div class="sig-badge ${sig.cls}">
+          <div class="sig-label">${sig.label}</div>
+          <div class="sig-upside">↑${r.brokerUpside}% target</div>
+        </div>
+        <div class="chevron${isExpanded?' open':''}">▾</div>
+      </div>
+    </div>
+    ${detail}
+  </div>`;
+}
+
+function toggleCard(sym) {
+  expandedSymbol = expandedSymbol === sym ? null : sym;
+  renderList(Object.values(stockData));
+}
+
+document.getElementById("searchBox").addEventListener("input", () => renderList(Object.values(stockData)));
+document.getElementById("sortSelect").addEventListener("change", () => renderList(Object.values(stockData)));
+
+// Start on load
+startFetch();
+</script>
+</body>
+</html>
